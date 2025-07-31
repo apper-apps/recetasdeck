@@ -11,7 +11,7 @@ const generateRecipe = async (formData) => {
       return generateFallbackRecipe(formData);
     }
 
-    try {
+try {
       const response = await window.Apper.callFunction({
         functionName: 'generateRecipe',
         parameters: {
@@ -22,19 +22,17 @@ const generateRecipe = async (formData) => {
         }
       });
 
-      if (!response || !response.success) {
-        throw new Error('API call failed: ' + (response?.error || 'Unknown error'));
+      if (response && response.success) {
+        const content = response.data?.choices?.[0]?.message?.content;
+        if (content) {
+          return parseRecipeResponse(content);
+        }
       }
-
-      const content = response.data?.choices?.[0]?.message?.content;
-      if (!content) {
-        throw new Error('No content received from API');
-      }
-
-      return parseRecipeResponse(content);
+      
+      console.log('Apper SDK failed, falling back to direct API call');
     } catch (error) {
       console.error('Apper SDK error:', error);
-      throw error;
+      console.log('Falling back to direct API call');
     }
     
     // Fallback to direct API call if Apper fails
