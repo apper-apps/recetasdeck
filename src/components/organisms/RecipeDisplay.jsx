@@ -7,54 +7,32 @@ import ProgressSteps from "@/components/molecules/ProgressSteps";
 const RecipeDisplay = ({ recipe, onNewRecipe, onBack, recipeType }) => {
   const steps = ["Bienvenida", "Formulario", "Receta"];
 
-  const copyToClipboard = async () => {
-    const recipeText = `
-${recipe.title}
+const copyToClipboard = async () => {
+    const recipeText = `🍽️ ${recipe.title}
 
-INGREDIENTES:
+📋 INGREDIENTES:
 ${recipe.ingredients.map(ingredient => `• ${ingredient}`).join('\n')}
 
-INSTRUCCIONES:
+👨‍🍳 INSTRUCCIONES:
 ${recipe.instructions.map((step, index) => `${index + 1}. ${step}`).join('\n')}
 
-TIP NUTRICIONAL:
+💡 TIP NUTRICIONAL:
 ${recipe.nutritionalTip}
 
-${recipe.motivationalQuote}
+✨ ${recipe.motivationalQuote}
 
 ---
-Generado por Recetas 80/20 - Nutre y Transforma
+🌟 Generado por Recetas 80/20 - Nutre y Transforma
     `.trim();
 
     try {
       await navigator.clipboard.writeText(recipeText);
-      toast.success("¡Receta copiada al portapapeles!");
+      toast.success("✅ Receta copiada");
     } catch (err) {
       toast.error("No se pudo copiar la receta");
     }
   };
 
-  const shareWhatsApp = () => {
-    const recipeText = `🍽️ *${recipe.title}*
-
-*INGREDIENTES:*
-${recipe.ingredients.map(ingredient => `• ${ingredient}`).join('\n')}
-
-*INSTRUCCIONES:*
-${recipe.instructions.map((step, index) => `${index + 1}. ${step}`).join('\n')}
-
-*💡 TIP NUTRICIONAL:*
-${recipe.nutritionalTip}
-
-✨ _${recipe.motivationalQuote}_
-
----
-🌟 Recetas 80/20 - Nutre y Transforma`;
-
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(recipeText)}`;
-    window.open(whatsappUrl, '_blank');
-    toast.success("¡Compartiendo en WhatsApp!");
-  };
 
   const getRecipeIcon = () => {
     return recipeType === "healthy-food" ? "Salad" : "Coffee";
@@ -227,7 +205,7 @@ ${recipe.nutritionalTip}
           </div>
         </motion.div>
 
-        {/* Action Buttons */}
+{/* Action Buttons */}
         <motion.div
           className="flex flex-col sm:flex-row gap-4 mt-8"
           initial={{ opacity: 0, y: 20 }}
@@ -240,14 +218,6 @@ ${recipe.nutritionalTip}
           >
             <ApperIcon name="Copy" size={18} className="mr-2" />
             Copiar receta
-          </Button>
-
-          <Button
-            onClick={shareWhatsApp}
-            className="sm:flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white"
-          >
-            <ApperIcon name="MessageCircle" size={18} className="mr-2" />
-            Compartir por WhatsApp
           </Button>
 
           <Button
