@@ -5,7 +5,7 @@ const generateRecipe = async (formData) => {
   const prompt = createPrompt(formData);
   
   try {
-// Use Apper SDK for secure API calls
+    // Use Apper SDK for secure API calls
     if (!window.Apper) {
       console.warn('Apper SDK not loaded, using fallback recipe');
       return generateFallbackRecipe(formData);
@@ -32,10 +32,30 @@ const generateRecipe = async (formData) => {
       }
 
       return parseRecipeResponse(content);
-    } catch (apiError) {
-      console.warn('API call failed, using fallback:', apiError.message);
-      return generateFallbackRecipe(formData);
+    } catch (error) {
+      console.error('Apper SDK error:', error);
+      throw error;
     }
+    
+    // Fallback to direct API call if Apper fails
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "user",
+            content: createPrompt(formData)
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      }),
+    });
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
