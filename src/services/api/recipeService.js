@@ -40,7 +40,7 @@ try {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer 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`,
+        'Authorization': `Bearer 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`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
