@@ -40,7 +40,7 @@ try {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+        'Authorization': `Bearer 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`,
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo",
