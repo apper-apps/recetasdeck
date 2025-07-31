@@ -5,24 +5,37 @@ const generateRecipe = async (formData) => {
   const prompt = createPrompt(formData);
   
   try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer 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",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.8,
-        max_tokens: 400
-      })
-    });
+// Use Apper SDK for secure API calls
+    if (!window.Apper) {
+      console.warn('Apper SDK not loaded, using fallback recipe');
+      return generateFallbackRecipe(formData);
+    }
+
+    try {
+      const response = await window.Apper.callFunction({
+        functionName: 'generateRecipe',
+        parameters: {
+          prompt: prompt,
+          model: 'gpt-3.5-turbo',
+          temperature: 0.8,
+          max_tokens: 400
+        }
+      });
+
+      if (!response || !response.success) {
+        throw new Error('API call failed: ' + (response?.error || 'Unknown error'));
+      }
+
+      const content = response.data?.choices?.[0]?.message?.content;
+      if (!content) {
+        throw new Error('No content received from API');
+      }
+
+      return parseRecipeResponse(content);
+    } catch (apiError) {
+      console.warn('API call failed, using fallback:', apiError.message);
+      return generateFallbackRecipe(formData);
+    }
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
