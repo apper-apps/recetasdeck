@@ -1,72 +1,38 @@
 const generateRecipe = async (formData) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 2000));
-
-  const prompt = createPrompt(formData);
   
   try {
-    // Use Apper SDK for secure API calls
-    if (!window.Apper) {
-      console.warn('Apper SDK not loaded, using fallback recipe');
-      return generateFallbackRecipe(formData);
-    }
+    // Prepare the JSON payload as specified
+    const requestPayload = {
+      type: formData.drinkType,
+      ingredients: formData.ingredients || "",
+      flavor: formData.flavor,
+      restrictions: formData.restrictions || "",
+      herbalifeProduct: formData.herbalifeProduct
+    };
 
-try {
-      const response = await window.Apper.callFunction({
-        functionName: 'generateRecipe',
-        parameters: {
-          prompt: prompt,
-          model: 'gpt-3.5-turbo',
-          temperature: 0.8,
-          max_tokens: 400
-        }
-      });
-
-      if (response && response.success) {
-        const content = response.data?.choices?.[0]?.message?.content;
-        if (content) {
-          return parseRecipeResponse(content);
-        }
-      }
-      
-      console.log('Apper SDK failed, falling back to direct API call');
-    } catch (error) {
-      console.error('Apper SDK error:', error);
-      console.log('Falling back to direct API call');
-    }
-    
-    // Fallback to direct API call if Apper fails
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Make POST request to the specified endpoint
+    const response = await fetch('https://f5cd37bc-280a-4d75-a4c1-26a805a46a0f-00-2ujcq7u8tt5xg.worf.replit.dev/generate-recipe', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer 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`,
       },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "user",
-            content: createPrompt(formData)
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7,
-      }),
+      body: JSON.stringify(requestPayload)
     });
 
     if (!response.ok) {
       throw new Error(`API Error: ${response.status}`);
     }
 
-    const data = await response.json();
-    const generatedContent = data.choices[0].message.content;
+    // Get the text response (it's a recipe text, not JSON)
+    const recipeText = await response.text();
     
-    // Send to Pabbly webhook
-    await sendToPabbly(formData, generatedContent);
+    // Send form data to Pabbly webhook for tracking
+    await sendToPabbly(formData, recipeText);
     
     // Parse the response into structured data
-    return parseRecipeResponse(generatedContent);
+    return parseRecipeResponse(recipeText);
     
   } catch (error) {
     console.error("Error generating recipe:", error);
@@ -76,11 +42,13 @@ try {
 };
 
 const createPrompt = (formData) => {
+  // This function is kept for compatibility but not used with the new API
+  // The new API expects a structured JSON payload instead of a text prompt
   const isHealthyFood = formData.type === "healthy-food";
   
   const typeText = isHealthyFood ? formData.mealType : `bebida ${formData.drinkType}`;
   const ingredientsText = formData.ingredients || "ingredientes de temporada";
-const restrictionsText = formData.restrictions || "ninguna restricción especial";
+  const restrictionsText = formData.restrictions || "ninguna restricción especial";
   const flavorText = formData.flavor;
   const herbalifeProductsText = isHealthyFood ? "ninguno" : formData.herbalifeProduct;
 
