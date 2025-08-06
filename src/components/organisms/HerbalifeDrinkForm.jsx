@@ -10,11 +10,14 @@ import ProgressSteps from "@/components/molecules/ProgressSteps";
 
 const HerbalifeDrinkForm = ({ onSubmit, onBack }) => {
 const [formData, setFormData] = useState({
-    drinkType: "",
-    flavor: "",
-    herbalifeProduct: "",
-    ingredients: "",
-    restrictions: "",
+    drinkType: "", // fría o caliente
+    objetivo: "", // energía, saciedad, recuperación, etc.
+    restricciones: [], // sin gluten, sin lactosa, sin azúcar, vegano
+    subtipo: "", // desayuno, comida, cena, postre, snack
+    ingredienteBase: "", // productos Herbalife
+    saborPrincipal: "",
+    modoPreparacion: "", // agua, leche descremada, leche de almendra/avena/soya
+    extras: [], // colágeno, aloe, fibra, etc.
     name: "",
     contact: ""
   });
@@ -27,8 +30,11 @@ const [formData, setFormData] = useState({
     const newErrors = {};
 
 if (!formData.drinkType) newErrors.drinkType = "Selecciona el tipo de bebida";
-    if (!formData.flavor) newErrors.flavor = "Selecciona tu sabor preferido";
-    if (!formData.herbalifeProduct) newErrors.herbalifeProduct = "Selecciona el producto Herbalife";
+    if (!formData.objetivo) newErrors.objetivo = "Selecciona tu objetivo";
+    if (!formData.subtipo) newErrors.subtipo = "Selecciona el subtipo";
+    if (!formData.ingredienteBase) newErrors.ingredienteBase = "Selecciona el ingrediente base";
+    if (!formData.saborPrincipal) newErrors.saborPrincipal = "Selecciona tu sabor principal";
+    if (!formData.modoPreparacion) newErrors.modoPreparacion = "Selecciona el modo de preparación";
     if (!formData.name.trim()) newErrors.name = "El nombre es requerido";
     if (!formData.contact.trim()) newErrors.contact = "El contacto es requerido";
 
@@ -56,9 +62,28 @@ if (!formData.drinkType) newErrors.drinkType = "Selecciona el tipo de bebida";
     }
   };
 
-  const handleSurpriseMe = () => {
-    setFormData(prev => ({ ...prev, ingredients: "Te sorprendo" }));
-    toast.success("¡Perfecto! Te sorprenderemos con ingredientes naturales especiales");
+const handleSurpriseMe = () => {
+    const surpriseExtras = ["colágeno", "aloe", "fibra"];
+    setFormData(prev => ({ ...prev, extras: surpriseExtras }));
+    toast.success("¡Perfecto! Te sorprenderemos con extras especiales");
+  };
+
+  const handleRestriccionChange = (restriccion) => {
+    setFormData(prev => ({
+      ...prev,
+      restricciones: prev.restricciones.includes(restriccion)
+        ? prev.restricciones.filter(r => r !== restriccion)
+        : [...prev.restricciones, restriccion]
+    }));
+  };
+
+  const handleExtraChange = (extra) => {
+    setFormData(prev => ({
+      ...prev,
+      extras: prev.extras.includes(extra)
+        ? prev.extras.filter(e => e !== extra)
+        : [...prev.extras, extra]
+    }));
   };
 
   return (
@@ -93,63 +118,142 @@ if (!formData.drinkType) newErrors.drinkType = "Selecciona el tipo de bebida";
           transition={{ delay: 0.2, duration: 0.5 }}
         >
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Drink Type */}
+{/* Tipo */}
             <Select
-              label="¿Qué tipo de bebida deseas?"
+              label="Tipo de bebida"
               required
               value={formData.drinkType}
               onChange={(e) => handleInputChange("drinkType", e.target.value)}
               error={errors.drinkType}
               placeholder="Selecciona la temperatura"
             >
-              <option value="fria">❄️ Fría</option>
-              <option value="caliente">☕ Caliente</option>
+              <option value="bebida fría">❄️ Bebida fría</option>
+              <option value="bebida caliente">☕ Bebida caliente</option>
             </Select>
 
-            {/* Flavor */}
+            {/* Objetivo */}
             <Select
-              label="¿Qué sabor prefieres?"
+              label="¿Cuál es tu objetivo?"
               required
-              value={formData.flavor}
-              onChange={(e) => handleInputChange("flavor", e.target.value)}
-              error={errors.flavor}
+              value={formData.objetivo}
+              onChange={(e) => handleInputChange("objetivo", e.target.value)}
+              error={errors.objetivo}
+              placeholder="Selecciona tu objetivo"
+            >
+              <option value="energía">⚡ Energía</option>
+              <option value="saciedad">🥱 Saciedad</option>
+              <option value="recuperación">💪 Recuperación</option>
+              <option value="bienestar general">✨ Bienestar general</option>
+              <option value="control de peso">⚖️ Control de peso</option>
+              <option value="hidratación">💧 Hidratación</option>
+            </Select>
+
+            {/* Restricciones */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
+                Restricciones alimenticias (puedes seleccionar varias)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {["sin gluten", "sin lactosa", "sin azúcar", "vegano"].map((restriccion) => (
+                  <label key={restriccion} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.restricciones.includes(restriccion)}
+                      onChange={() => handleRestriccionChange(restriccion)}
+                      className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
+                    />
+                    <span className="text-sm text-gray-700 capitalize">{restriccion}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Subtipo */}
+            <Select
+              label="¿Para cuándo es la bebida?"
+              required
+              value={formData.subtipo}
+              onChange={(e) => handleInputChange("subtipo", e.target.value)}
+              error={errors.subtipo}
+              placeholder="Selecciona el momento"
+            >
+              <option value="desayuno">🌅 Desayuno</option>
+              <option value="comida">🍽️ Comida</option>
+              <option value="cena">🌙 Cena</option>
+              <option value="postre">🍰 Postre</option>
+              <option value="snack">🥨 Snack</option>
+            </Select>
+
+            {/* Ingrediente Base */}
+            <Select
+              label="Ingrediente base (producto Herbalife)"
+              required
+              value={formData.ingredienteBase}
+              onChange={(e) => handleInputChange("ingredienteBase", e.target.value)}
+              error={errors.ingredienteBase}
+              placeholder="Selecciona el producto base"
+            >
+              <option value="batido Fórmula 1">🥤 Batido Fórmula 1</option>
+              <option value="té Herbalife">🍃 Té Herbalife</option>
+              <option value="aloe">🌿 Aloe</option>
+              <option value="proteína">💪 Proteína</option>
+              <option value="colágeno">✨ Colágeno</option>
+              <option value="varios productos">🎯 Varios productos</option>
+            </Select>
+
+            {/* Sabor Principal */}
+            <Select
+              label="Sabor principal"
+              required
+              value={formData.saborPrincipal}
+              onChange={(e) => handleInputChange("saborPrincipal", e.target.value)}
+              error={errors.saborPrincipal}
               placeholder="Selecciona tu sabor favorito"
             >
               <option value="chocolate">🍫 Chocolate</option>
               <option value="vainilla">🍦 Vainilla</option>
               <option value="mango">🥭 Mango</option>
               <option value="fresa">🍓 Fresa</option>
-              <option value="otro">🌈 Otro</option>
+              <option value="cookies and cream">🍪 Cookies and Cream</option>
+              <option value="cappuccino">☕ Cappuccino</option>
+              <option value="menta">🌿 Menta</option>
+              <option value="tropical">🏝️ Tropical</option>
             </Select>
 
-            {/* Herbalife Product */}
+            {/* Modo de Preparación */}
             <Select
-label="¿Qué producto Herbalife deseas usar?"
+              label="¿Cómo prefieres prepararlo?"
               required
-              value={formData.herbalifeProduct}
-              onChange={(e) => handleInputChange("herbalifeProduct", e.target.value)}
-              error={errors.herbalifeProduct}
-              placeholder="Selecciona el producto"
+              value={formData.modoPreparacion}
+              onChange={(e) => handleInputChange("modoPreparacion", e.target.value)}
+              error={errors.modoPreparacion}
+              placeholder="Selecciona el modo de preparación"
             >
-              <option value="formula-1">🥤 Fórmula 1</option>
-              <option value="proteina-gold">💪 Proteína Gold</option>
-              <option value="aloe">🌿 Aloe</option>
-              <option value="te">🍃 Té</option>
-              <option value="colageno">✨ Colágeno</option>
-              <option value="varios">🎯 Varios</option>
+              <option value="agua">💧 Agua</option>
+              <option value="leche descremada">🥛 Leche descremada</option>
+              <option value="leche de almendra">🌰 Leche de almendra</option>
+              <option value="leche de avena">🌾 Leche de avena</option>
+              <option value="leche de soya">🌱 Leche de soya</option>
             </Select>
 
-            {/* Natural Ingredients */}
-            <div className="space-y-2">
+            {/* Extras */}
+            <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-700">
-                ¿Qué ingredientes naturales tienes disponibles?
+                Extras opcionales (puedes seleccionar varios)
               </label>
-              <Textarea
-                placeholder="Ejemplo: plátano, espinacas, leche de almendras, canela..."
-                value={formData.ingredients}
-                onChange={(e) => handleInputChange("ingredients", e.target.value)}
-                rows={3}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                {["colágeno", "aloe", "fibra", "proteína extra", "omega 3", "vitaminas"].map((extra) => (
+                  <label key={extra} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.extras.includes(extra)}
+                      onChange={() => handleExtraChange(extra)}
+                      className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
+                    />
+                    <span className="text-sm text-gray-700 capitalize">{extra}</span>
+                  </label>
+                ))}
+              </div>
               <div className="flex justify-end">
                 <Button
                   type="button"
@@ -163,14 +267,6 @@ label="¿Qué producto Herbalife deseas usar?"
                 </Button>
               </div>
             </div>
-
-            {/* Restrictions */}
-            <Input
-              label="¿Tienes alguna preferencia o restricción?"
-              placeholder="Ejemplo: sin azúcar, sin lácteos, vegano..."
-              value={formData.restrictions}
-              onChange={(e) => handleInputChange("restrictions", e.target.value)}
-            />
 
             {/* Contact Information */}
             <div className="bg-gradient-to-r from-accent-50 to-orange-50 rounded-xl p-6 border border-accent-200">

@@ -1,93 +1,66 @@
 const generateRecipe = async (formData) => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 2000));
+  // Simulate processing delay
+  await new Promise(resolve => setTimeout(resolve, 1500));
   
   try {
-    // Prepare the JSON payload as specified
-    const requestPayload = {
-      type: formData.drinkType,
-      ingredients: formData.ingredients || "",
-      flavor: formData.flavor,
-      restrictions: formData.restrictions || "",
-      herbalifeProduct: formData.herbalifeProduct
+    // Generate the prompt according to specifications
+    const prompt = createPrompt(formData);
+    
+    // Send the prompt to Pabbly webhook
+    await sendToPabbly(prompt);
+    
+    // Return success response with confirmation message
+    return {
+      success: true,
+      title: "✅ ¡Gracias! Tu receta personalizada está en camino",
+      description: "La recibirás en unos segundos...",
+      prompt: prompt // For testing purposes
     };
-
-    // Make POST request to the specified endpoint
-    const response = await fetch('https://f5cd37bc-280a-4d75-a4c1-26a805a46a0f-00-2ujcq7u8tt5xg.worf.replit.dev/generate-recipe', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestPayload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status}`);
-    }
-
-    // Get the text response (it's a recipe text, not JSON)
-    const recipeText = await response.text();
-    
-    // Send form data to Pabbly webhook for tracking
-    await sendToPabbly(formData, recipeText);
-    
-    // Parse the response into structured data
-    return parseRecipeResponse(recipeText);
     
   } catch (error) {
     console.error("Error generating recipe:", error);
-    // Return a fallback recipe if API fails
-    return generateFallbackRecipe(formData);
+    throw new Error("No pudimos procesar tu solicitud. Por favor, inténtalo de nuevo.");
   }
 };
 
 const createPrompt = (formData) => {
-  // This function is kept for compatibility but not used with the new API
-  // The new API expects a structured JSON payload instead of a text prompt
-  const isHealthyFood = formData.type === "healthy-food";
-  
-  const typeText = isHealthyFood ? formData.mealType : `bebida ${formData.drinkType}`;
-  const ingredientsText = formData.ingredients || "ingredientes de temporada";
-  const restrictionsText = formData.restrictions || "ninguna restricción especial";
-  const flavorText = formData.flavor;
-  const herbalifeProductsText = isHealthyFood ? "ninguno" : formData.herbalifeProduct;
+  let prompt = `Quiero que me des una receta de una ${formData.drinkType} que se pueda tomar como ${formData.subtipo}, hecha con productos de Herbalife.
+El objetivo principal de esta bebida es: ${formData.objetivo}.
+Debe incluir como base: ${formData.ingredienteBase} con sabor ${formData.saborPrincipal}, y prepararse con ${formData.modoPreparacion}.`;
 
-  return `Actúa como un chef experto en nutrición saludable. Genera una receta en español para un usuario que desea una ${typeText}. Ingredientes disponibles: ${ingredientsText}. Restricciones o preferencias: ${restrictionsText}. Sabor preferido: ${flavorText}. Productos Herbalife: ${herbalifeProductsText}.
+  // Add restrictions if any
+  if (formData.restricciones && formData.restricciones.length > 0) {
+    prompt += `\nConsidera las siguientes restricciones alimenticias: ${formData.restricciones.join(', ')}.`;
+  }
 
-✅ La receta debe:
-- Usar solo ingredientes fáciles de conseguir en México.
-- Evitar cualquier preparación frita o capeada.
-- Ser sencilla, práctica y con buen sabor.
+  // Add extras if any
+  if (formData.extras && formData.extras.length > 0) {
+    prompt += `\nOpcionalmente puede incluir estos complementos: ${formData.extras.join(', ')}.`;
+  }
 
-✅ Incluye:
-1. Título atractivo
-2. Lista clara de ingredientes
-3. Instrucciones paso a paso
-4. Tip nutricional breve
-5. Frase motivadora estilo Coach 80/20 como: "Pequeños cambios generan grandes transformaciones".`;
+  // Add snack suggestion if applicable
+  if (formData.subtipo === "snack") {
+    prompt += `\nSugiere un acompañamiento como una barrita, ponche de frutas o chips proteicos.`;
+  }
+
+  prompt += `\nEntrega el resultado con instrucciones simples, ingredientes exactos y recomendaciones opcionales.`;
+
+  return prompt;
 };
 
-const sendToPabbly = async (formData, recipeGenerated) => {
-  try {
-    await fetch("https://connect.pabbly.com/workflow/sendwebhookdata/IjU3NjYwNTZhMDYzMjA0MzA1MjZhNTUzMjUxMzQi_pc", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        nombre: formData.name,
-        contacto: formData.contact,
-        tipo_receta: formData.type,
-        ingredientes: formData.ingredients,
-restricciones: formData.restrictions,
-        sabor: formData.flavor,
-        productos_herbalife: formData.herbalifeProduct || "ninguno",
-        receta_generada: recipeGenerated
-      })
-    });
-  } catch (error) {
-    console.error("Error sending to Pabbly:", error);
-    // Don't throw error, just log it
+const sendToPabbly = async (prompt) => {
+  const response = await fetch("https://connect.pabbly.com/workflow/sendwebhookdata/IjU3NjYwNTZhMDYzMjA0MzA1MjZhNTUzMjUxMzQi_pc", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      prompt: prompt
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Webhook Error: ${response.status}`);
   }
 };
 
