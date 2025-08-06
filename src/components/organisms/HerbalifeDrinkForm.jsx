@@ -10,14 +10,12 @@ import ProgressSteps from "@/components/molecules/ProgressSteps";
 
 const HerbalifeDrinkForm = ({ onSubmit, onBack }) => {
 const [formData, setFormData] = useState({
-    drinkType: "", // fría o caliente
-    objetivo: "", // energía, saciedad, recuperación, etc.
-    restricciones: [], // sin gluten, sin lactosa, sin azúcar, vegano
-    subtipo: "", // desayuno, comida, cena, postre, snack
-    ingredienteBase: "", // productos Herbalife
-    saborPrincipal: "",
-    modoPreparacion: "", // agua, leche descremada, leche de almendra/avena/soya
-    extras: [], // colágeno, aloe, fibra, etc.
+    tipoBebida: "", // fría o caliente
+    objetivo: [], // array de objetivos
+    productos: [], // productos Herbalife disponibles
+    sabor: "",
+    base: "", // modo de preparación
+    extras: [], // complementos opcionales
     name: "",
     contact: ""
   });
@@ -26,15 +24,14 @@ const [formData, setFormData] = useState({
 
   const steps = ["Bienvenida", "Formulario", "Receta"];
 
-  const validateForm = () => {
+const validateForm = () => {
     const newErrors = {};
 
-if (!formData.drinkType) newErrors.drinkType = "Selecciona el tipo de bebida";
-    if (!formData.objetivo) newErrors.objetivo = "Selecciona tu objetivo";
-    if (!formData.subtipo) newErrors.subtipo = "Selecciona el subtipo";
-    if (!formData.ingredienteBase) newErrors.ingredienteBase = "Selecciona el ingrediente base";
-    if (!formData.saborPrincipal) newErrors.saborPrincipal = "Selecciona tu sabor principal";
-    if (!formData.modoPreparacion) newErrors.modoPreparacion = "Selecciona el modo de preparación";
+    if (!formData.tipoBebida) newErrors.tipoBebida = "Selecciona el tipo de bebida";
+    if (formData.objetivo.length === 0) newErrors.objetivo = "Selecciona al menos un objetivo";
+    if (formData.productos.length === 0) newErrors.productos = "Selecciona al menos un producto";
+    if (!formData.sabor) newErrors.sabor = "Selecciona tu sabor principal";
+    if (!formData.base) newErrors.base = "Selecciona el modo de preparación";
     if (!formData.name.trim()) newErrors.name = "El nombre es requerido";
     if (!formData.contact.trim()) newErrors.contact = "El contacto es requerido";
 
@@ -42,7 +39,7 @@ if (!formData.drinkType) newErrors.drinkType = "Selecciona el tipo de bebida";
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
     
     if (validateForm()) {
@@ -68,12 +65,21 @@ const handleSurpriseMe = () => {
     toast.success("¡Perfecto! Te sorprenderemos con extras especiales");
   };
 
-  const handleRestriccionChange = (restriccion) => {
+const handleObjetivoChange = (objetivo) => {
     setFormData(prev => ({
       ...prev,
-      restricciones: prev.restricciones.includes(restriccion)
-        ? prev.restricciones.filter(r => r !== restriccion)
-        : [...prev.restricciones, restriccion]
+      objetivo: prev.objetivo.includes(objetivo)
+        ? prev.objetivo.filter(o => o !== objetivo)
+        : [...prev.objetivo, objetivo]
+    }));
+  };
+
+  const handleProductoChange = (producto) => {
+    setFormData(prev => ({
+      ...prev,
+      productos: prev.productos.includes(producto)
+        ? prev.productos.filter(p => p !== producto)
+        : [...prev.productos, producto]
     }));
   };
 
@@ -119,95 +125,71 @@ const handleSurpriseMe = () => {
         >
           <form onSubmit={handleSubmit} className="space-y-6">
 {/* Tipo */}
-            <Select
+<Select
               label="Tipo de bebida"
               required
-              value={formData.drinkType}
-              onChange={(e) => handleInputChange("drinkType", e.target.value)}
-              error={errors.drinkType}
+              value={formData.tipoBebida}
+              onChange={(e) => handleInputChange("tipoBebida", e.target.value)}
+              error={errors.tipoBebida}
               placeholder="Selecciona la temperatura"
             >
-              <option value="bebida fría">❄️ Bebida fría</option>
-              <option value="bebida caliente">☕ Bebida caliente</option>
+              <option value="fría">❄️ Bebida fría</option>
+              <option value="caliente">☕ Bebida caliente</option>
             </Select>
 
             {/* Objetivo */}
-            <Select
-              label="¿Cuál es tu objetivo?"
-              required
-              value={formData.objetivo}
-              onChange={(e) => handleInputChange("objetivo", e.target.value)}
-              error={errors.objetivo}
-              placeholder="Selecciona tu objetivo"
-            >
-              <option value="energía">⚡ Energía</option>
-              <option value="saciedad">🥱 Saciedad</option>
-              <option value="recuperación">💪 Recuperación</option>
-              <option value="bienestar general">✨ Bienestar general</option>
-              <option value="control de peso">⚖️ Control de peso</option>
-              <option value="hidratación">💧 Hidratación</option>
-            </Select>
-
-            {/* Restricciones */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-700">
-                Restricciones alimenticias (puedes seleccionar varias)
+                ¿Cuáles son tus objetivos? <span className="text-red-500">*</span>
               </label>
+              {errors.objetivo && (
+                <p className="text-red-500 text-xs">{errors.objetivo}</p>
+              )}
               <div className="grid grid-cols-2 gap-3">
-                {["sin gluten", "sin lactosa", "sin azúcar", "vegano"].map((restriccion) => (
-                  <label key={restriccion} className="flex items-center space-x-2 cursor-pointer">
+                {["Antes del ejercicio", "Durante el ejercicio", "Después del ejercicio", "Energía", "Saciedad", "Bienestar general"].map((objetivo) => (
+                  <label key={objetivo} className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={formData.restricciones.includes(restriccion)}
-                      onChange={() => handleRestriccionChange(restriccion)}
+                      checked={formData.objetivo.includes(objetivo)}
+                      onChange={() => handleObjetivoChange(objetivo)}
                       className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
                     />
-                    <span className="text-sm text-gray-700 capitalize">{restriccion}</span>
+                    <span className="text-sm text-gray-700">{objetivo}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/* Subtipo */}
-            <Select
-              label="¿Para cuándo es la bebida?"
-              required
-              value={formData.subtipo}
-              onChange={(e) => handleInputChange("subtipo", e.target.value)}
-              error={errors.subtipo}
-              placeholder="Selecciona el momento"
-            >
-              <option value="desayuno">🌅 Desayuno</option>
-              <option value="comida">🍽️ Comida</option>
-              <option value="cena">🌙 Cena</option>
-              <option value="postre">🍰 Postre</option>
-              <option value="snack">🥨 Snack</option>
-            </Select>
-
-            {/* Ingrediente Base */}
-            <Select
-              label="Ingrediente base (producto Herbalife)"
-              required
-              value={formData.ingredienteBase}
-              onChange={(e) => handleInputChange("ingredienteBase", e.target.value)}
-              error={errors.ingredienteBase}
-              placeholder="Selecciona el producto base"
-            >
-              <option value="batido Fórmula 1">🥤 Batido Fórmula 1</option>
-              <option value="té Herbalife">🍃 Té Herbalife</option>
-              <option value="aloe">🌿 Aloe</option>
-              <option value="proteína">💪 Proteína</option>
-              <option value="colágeno">✨ Colágeno</option>
-              <option value="varios productos">🎯 Varios productos</option>
-            </Select>
+            {/* Productos */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
+                ¿Qué productos Herbalife tienes disponibles? <span className="text-red-500">*</span>
+              </label>
+              {errors.productos && (
+                <p className="text-red-500 text-xs">{errors.productos}</p>
+              )}
+              <div className="grid grid-cols-2 gap-3">
+                {["Fórmula 1", "Té NRG", "Aloe", "Proteína", "Colágeno", "CR7 Drive", "Té Verde Granada", "Ponche de Frutas", "BCAAs", "Rebuild Strength", "Creatina"].map((producto) => (
+                  <label key={producto} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.productos.includes(producto)}
+                      onChange={() => handleProductoChange(producto)}
+                      className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
+                    />
+                    <span className="text-sm text-gray-700">{producto}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             {/* Sabor Principal */}
             <Select
               label="Sabor principal"
               required
-              value={formData.saborPrincipal}
-              onChange={(e) => handleInputChange("saborPrincipal", e.target.value)}
-              error={errors.saborPrincipal}
+              value={formData.sabor}
+              onChange={(e) => handleInputChange("sabor", e.target.value)}
+              error={errors.sabor}
               placeholder="Selecciona tu sabor favorito"
             >
               <option value="chocolate">🍫 Chocolate</option>
@@ -224,9 +206,9 @@ const handleSurpriseMe = () => {
             <Select
               label="¿Cómo prefieres prepararlo?"
               required
-              value={formData.modoPreparacion}
-              onChange={(e) => handleInputChange("modoPreparacion", e.target.value)}
-              error={errors.modoPreparacion}
+              value={formData.base}
+              onChange={(e) => handleInputChange("base", e.target.value)}
+              error={errors.base}
               placeholder="Selecciona el modo de preparación"
             >
               <option value="agua">💧 Agua</option>
@@ -235,6 +217,26 @@ const handleSurpriseMe = () => {
               <option value="leche de avena">🌾 Leche de avena</option>
               <option value="leche de soya">🌱 Leche de soya</option>
             </Select>
+
+            {/* Extras */}
+            <div className="space-y-3">
+              <label className="block text-sm font-semibold text-gray-700">
+                Extras opcionales (puedes seleccionar varios)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                {["Fibra", "Vitaminas", "Omega 3", "Antioxidantes", "Probióticos", "Minerales"].map((extra) => (
+                  <label key={extra} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.extras.includes(extra)}
+                      onChange={() => handleExtraChange(extra)}
+                      className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
+                    />
+                    <span className="text-sm text-gray-700">{extra}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
 
             {/* Extras */}
             <div className="space-y-3">
@@ -254,7 +256,7 @@ const handleSurpriseMe = () => {
                   </label>
                 ))}
               </div>
-              <div className="flex justify-end">
+<div className="flex justify-end">
                 <Button
                   type="button"
                   variant="ghost"

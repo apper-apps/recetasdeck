@@ -10,11 +10,10 @@ const useRecipeGenerator = () => {
     setLoading(true);
     setError("");
     setRecipe(null);
-
 try {
       const generatedRecipe = await recipeService.generateRecipe(formData);
-      setRecipe(generatedRecipe);
-      return generatedRecipe;
+      setRecipe(generatedRecipe.data);
+      return generatedRecipe.data;
     } catch (err) {
       console.error('Recipe generation error:', err);
       

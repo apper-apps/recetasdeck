@@ -1,67 +1,71 @@
 const generateRecipe = async (formData) => {
-  // Simulate processing delay
   await new Promise(resolve => setTimeout(resolve, 1500));
-  
+
   try {
-    // Generate the prompt according to specifications
     const prompt = createPrompt(formData);
-    
-    // Send the prompt to Pabbly webhook
-    await sendToPabbly(prompt);
-    
-    // Return success response with confirmation message
+    const diaflowResponse = await sendToDiaflow(prompt);
+
+    const parsedRecipe = parseRecipeResponse(diaflowResponse.result || diaflowResponse.response || diaflowResponse.text || diaflowResponse);
+
     return {
       success: true,
-      title: "✅ ¡Gracias! Tu receta personalizada está en camino",
-      description: "La recibirás en unos segundos...",
-      prompt: prompt // For testing purposes
+      title: "✅ ¡Gracias! Tu receta personalizada está lista",
+      description: "Aquí tienes tu bebida personalizada Herbalife:",
+      data: parsedRecipe,
+      prompt: prompt // Para debug
     };
-    
   } catch (error) {
-    console.error("Error generating recipe:", error);
-    throw new Error("No pudimos procesar tu solicitud. Por favor, inténtalo de nuevo.");
+    console.error("Error al generar receta:", error);
+    throw new Error("No pudimos procesar tu solicitud. Intenta nuevamente.");
   }
 };
 
 const createPrompt = (formData) => {
-  let prompt = `Quiero que me des una receta de una ${formData.drinkType} que se pueda tomar como ${formData.subtipo}, hecha con productos de Herbalife.
-El objetivo principal de esta bebida es: ${formData.objetivo}.
-Debe incluir como base: ${formData.ingredienteBase} con sabor ${formData.saborPrincipal}, y prepararse con ${formData.modoPreparacion}.`;
+  const objetivo = formData.objetivo.join(", ");
+  const productos = formData.productos.join(", ");
+  const extras = formData.extras?.length ? formData.extras.join(", ") : "Ninguno";
 
-  // Add restrictions if any
-  if (formData.restricciones && formData.restricciones.length > 0) {
-    prompt += `\nConsidera las siguientes restricciones alimenticias: ${formData.restricciones.join(', ')}.`;
+  let prompt = `Quiero que me des una receta de una bebida ${formData.tipoBebida} con productos de Herbalife. Mi objetivo con esta bebida es: ${objetivo}. Me gustaría que el sabor base fuera ${formData.sabor}. Tengo disponibles los siguientes productos: ${productos}. Prefiero prepararla con ${formData.base}. Me gustaría añadir: ${extras}.`;
+
+  // Validaciones lógicas específicas
+  if (objetivo.includes("Durante el ejercicio")) {
+    prompt += ` Solo utiliza productos apropiados para consumo durante el ejercicio como: CR7 Drive, Té ligero, Aloe, BCAAs, o Herbalife #1 Sport.`;
   }
 
-  // Add extras if any
-  if (formData.extras && formData.extras.length > 0) {
-    prompt += `\nOpcionalmente puede incluir estos complementos: ${formData.extras.join(', ')}.`;
+  if (objetivo.includes("Después del ejercicio")) {
+    prompt += ` Asegúrate de incluir productos como Rebuild Strength, Enhanced Protein Powder o Creatina para recuperación.`;
   }
 
-  // Add snack suggestion if applicable
-  if (formData.subtipo === "snack") {
-    prompt += `\nSugiere un acompañamiento como una barrita, ponche de frutas o chips proteicos.`;
+  if (objetivo.includes("Antes del ejercicio")) {
+    prompt += ` Incluye productos energéticos como Creatina, Herbalife #1 Sport o Té NRG.`;
   }
 
-  prompt += `\nEntrega el resultado con instrucciones simples, ingredientes exactos y recomendaciones opcionales.`;
+  const productosCafeina = ["NRG", "Té Verde Granada", "Ponche de Frutas"];
+  const contieneCafeina = productosCafeina.some(p => productos.includes(p));
+
+  if (objetivo.includes("Durante el ejercicio") && contieneCafeina) {
+    prompt += ` ⚠️ Precaución: se han seleccionado productos con cafeína para consumo durante ejercicio. Sugerir cuidado.`;
+  }
+
+  prompt += ` Entrega el resultado con instrucciones simples, ingredientes exactos y recomendaciones opcionales.`;
 
   return prompt;
 };
 
-const sendToPabbly = async (prompt) => {
-  const response = await fetch("https://connect.pabbly.com/workflow/sendwebhookdata/IjU3NjYwNTZhMDYzMjA0MzA1MjZhNTUzMjUxMzQi_pc", {
+const sendToDiaflow = async (prompt) => {
+  const response = await fetch("https://api.diaflow.io/api/v1/builders/KAavBbwzDY/webhook?api_key=sk-fSMImZJuEGdZUSdSbj4rnRg23lcHpw04", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      prompt: prompt
-    })
+    body: JSON.stringify({ prompt: prompt })
   });
 
   if (!response.ok) {
-    throw new Error(`Webhook Error: ${response.status}`);
+    throw new Error(`Diaflow Webhook Error: ${response.status}`);
   }
+
+  return await response.json();
 };
 
 const parseRecipeResponse = (content) => {
