@@ -3,24 +3,42 @@ import React from "react";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 
-const Error = ({ 
-  message = "Algo salió mal al generar tu receta", 
-  onRetry,
-  title = "¡Ups! Tenemos un pequeño problema"
-}) => {
-  // Ensure message is always a string to prevent [object Object] display
-  const displayMessage = React.useMemo(() => {
-    if (typeof message === 'string') {
-      return message;
+// Utility to extract meaningful error messages from any error format
+const getErrorMessage = (error) => {
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+  
+  if (error && typeof error === 'object') {
+    // Try to extract message from error object
+    if (typeof error.message === 'string' && error.message.trim()) {
+      return error.message.trim();
     }
-    if (message?.message && typeof message.message === 'string') {
-      return message.message;
+    
+    // Try toString method
+    if (typeof error.toString === 'function') {
+      const stringified = error.toString();
+      if (stringified !== '[object Object]' && stringified.trim()) {
+        return stringified.trim();
+      }
     }
-    if (message?.toString && message.toString() !== '[object Object]') {
-      return message.toString();
+    
+    // Try to extract any string property
+    const stringProps = Object.values(error).find(val => 
+      typeof val === 'string' && val.trim() && val !== '[object Object]'
+    );
+    if (stringProps) {
+      return stringProps.trim();
     }
-    return "Algo salió mal al generar tu receta";
-  }, [message]);
+  }
+  
+  // Fallback message
+  return "Ha ocurrido un error inesperado. Por favor, inténtalo de nuevo.";
+};
+
+function Error({ message, onRetry, title }) {
+  const displayMessage = getErrorMessage(message);
+
   return (
     <motion.div
       className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center"
@@ -45,10 +63,10 @@ const Error = ({
       {/* Error content */}
       <div className="max-w-md">
         <h3 className="text-2xl font-display font-bold text-gray-800 mb-3">
-          {title}
+          {title || "¡Ups! Algo salió mal"}
         </h3>
         
-<p className="text-gray-600 font-body text-lg mb-6 leading-relaxed">
+        <p className="text-gray-600 font-body text-lg mb-6 leading-relaxed">
           {displayMessage}
         </p>
 
@@ -100,6 +118,6 @@ const Error = ({
       </motion.div>
     </motion.div>
   );
-};
+}
 
 export default Error;

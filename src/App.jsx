@@ -1,16 +1,17 @@
-import { useState } from "react";
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
-import { motion, AnimatePresence } from "framer-motion";
-
-import WelcomeScreen from "@/components/organisms/WelcomeScreen";
-import HealthyFoodForm from "@/components/organisms/HealthyFoodForm";
-import HerbalifeDrinkForm from "@/components/organisms/HerbalifeDrinkForm";
+import { AnimatePresence, motion } from "framer-motion";
+import "@/index.css";
 import RecipeDisplay from "@/components/organisms/RecipeDisplay";
+import HealthyFoodForm from "@/components/organisms/HealthyFoodForm";
+import WelcomeScreen from "@/components/organisms/WelcomeScreen";
+import HerbalifeDrinkForm from "@/components/organisms/HerbalifeDrinkForm";
 import Loading from "@/components/ui/Loading";
 import Error from "@/components/ui/Error";
-
 import useRecipeGenerator from "@/hooks/useRecipeGenerator";
+
+
 
 const AppContent = () => {
   const [currentStep, setCurrentStep] = useState("welcome"); // welcome, healthy-form, herbalife-form, recipe
@@ -62,10 +63,21 @@ const AppContent = () => {
       return <Loading message="Generando tu receta perfecta..." />;
     }
 
-    if (error) {
+if (error) {
+      // Extract meaningful error message before passing to Error component
+      const errorMessage = (() => {
+        if (typeof error === 'string' && error.trim()) return error.trim();
+        if (error?.message && typeof error.message === 'string') return error.message.trim();
+        if (error?.toString && typeof error.toString === 'function') {
+          const stringified = error.toString();
+          return stringified !== '[object Object]' ? stringified : 'Error al generar receta';
+        }
+        return 'Error al generar receta';
+      })();
+
       return (
         <Error
-          message={error}
+          message={errorMessage}
           onRetry={() => formData && handleFormSubmit(formData)}
           title="¡Ups! Tenemos un pequeño problema"
         />
