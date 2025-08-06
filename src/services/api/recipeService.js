@@ -21,13 +21,27 @@ const generateRecipe = async (formData) => {
     };
 } catch (error) {
     // Proper error logging with serialized object
+// Extract meaningful error message for logging and user display
+    const errorMessage = (() => {
+      if (typeof error === 'string') return error;
+      if (error?.message && typeof error.message === 'string') return error.message;
+      if (error?.toString && typeof error.toString === 'function') {
+        const stringified = error.toString();
+        return stringified !== '[object Object]' ? stringified : 'Error desconocido al generar receta';
+      }
+      return 'Error desconocido al generar receta';
+    })();
+
     console.error("💥 Error completo al generar receta:", {
-      message: error?.message || String(error),
+      message: errorMessage,
+      originalError: error,
       stack: error?.stack,
       type: error?.constructor?.name,
       formData: formData
     });
     
+    // Throw a meaningful error message instead of the raw error object
+    throw new Error(errorMessage);
     // Extract meaningful error message from various error formats
     let errorMessage = "No pudimos procesar tu solicitud. Intenta nuevamente.";
     
@@ -123,8 +137,26 @@ const sendToDiaflow = async (prompt) => {
     return responseData;
     
   } catch (error) {
-    console.error("💥 Error completo en sendToDiaflow:", error);
-    throw error;
+// Extract meaningful error message for sendToDiaflow errors
+    const errorMessage = (() => {
+      if (typeof error === 'string') return error;
+      if (error?.message && typeof error.message === 'string') return error.message;
+      if (error?.toString && typeof error.toString === 'function') {
+        const stringified = error.toString();
+        return stringified !== '[object Object]' ? stringified : 'Error de conexión con el servicio';
+      }
+      return 'Error de conexión con el servicio';
+    })();
+
+    console.error("💥 Error completo en sendToDiaflow:", {
+      message: errorMessage,
+      originalError: error,
+      stack: error?.stack,
+      type: error?.constructor?.name
+    });
+    
+    // Throw a meaningful error message
+    throw new Error(errorMessage);
   }
 };
 
