@@ -3,19 +3,34 @@ const generateRecipe = async (formData) => {
 
   try {
     const prompt = createPrompt(formData);
+    console.log("🔍 Prompt generado:", prompt);
+    
     const diaflowResponse = await sendToDiaflow(prompt);
+    console.log("🔍 Respuesta completa de Diaflow:", diaflowResponse);
 
-    const parsedRecipe = parseRecipeResponse(diaflowResponse.result || diaflowResponse.response || diaflowResponse.text || diaflowResponse);
+    const parsedRecipe = parseRecipeResponse(diaflowResponse.result || diaflowResponse.response || diaflowResponse.text || diaflowResponse.message || diaflowResponse);
+    console.log("🔍 Receta parseada:", parsedRecipe);
 
     return {
       success: true,
       title: "✅ ¡Gracias! Tu receta personalizada está lista",
       description: "Aquí tienes tu bebida personalizada Herbalife:",
       data: parsedRecipe,
-      prompt: prompt // Para debug
+      prompt: prompt, // Para debug
+      webhookResponse: diaflowResponse // Para debug adicional
     };
   } catch (error) {
-    console.error("Error al generar receta:", error);
+    console.error("💥 Error completo al generar receta:", {
+      message: error.message,
+      stack: error.stack,
+      formData: formData
+    });
+    
+    // Si el error es del webhook, proporcionamos más información
+    if (error.message.includes('Diaflow Webhook Error')) {
+      throw new Error(`Error de conexión con el servicio de recetas: ${error.message}\n\nPor favor, verifica tu conexión a internet e intenta nuevamente.`);
+    }
+    
     throw new Error("No pudimos procesar tu solicitud. Intenta nuevamente.");
   }
 };
@@ -53,19 +68,50 @@ const createPrompt = (formData) => {
 };
 
 const sendToDiaflow = async (prompt) => {
-  const response = await fetch("https://api.diaflow.io/api/v1/builders/KAavBbwzDY/webhook?api_key=sk-fSMImZJuEGdZUSdSbj4rnRg23lcHpw04", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ prompt: prompt })
-  });
+  console.log("🚀 Enviando datos a Diaflow:", { prompt });
+  
+  const webhookData = {
+    message: prompt,
+    prompt: prompt,
+    text: prompt,
+    input: prompt
+  };
+  
+  console.log("📤 Datos del webhook:", webhookData);
+  
+  try {
+    const response = await fetch("https://api.diaflow.io/api/v1/builders/KAavBbwzDY/webhook?api_key=sk-fSMImZJuEGdZUSdSbj4rnRg23lcHpw04", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "RecetasApp/1.0"
+      },
+      body: JSON.stringify(webhookData)
+    });
 
-  if (!response.ok) {
-    throw new Error(`Diaflow Webhook Error: ${response.status}`);
+    console.log("📥 Respuesta del webhook - Status:", response.status);
+    console.log("📥 Respuesta del webhook - Headers:", Object.fromEntries(response.headers.entries()));
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("❌ Error del webhook:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+        url: response.url
+      });
+      throw new Error(`Diaflow Webhook Error: ${response.status} - ${response.statusText}\nRespuesta: ${errorText}`);
+    }
+
+    const responseData = await response.json();
+    console.log("✅ Respuesta exitosa del webhook:", responseData);
+    return responseData;
+    
+  } catch (error) {
+    console.error("💥 Error completo en sendToDiaflow:", error);
+    throw error;
   }
-
-  return await response.json();
 };
 
 const parseRecipeResponse = (content) => {
