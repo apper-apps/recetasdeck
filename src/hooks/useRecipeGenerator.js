@@ -18,17 +18,32 @@ try {
       console.error('Recipe generation error:', err);
       
       // Extract error message from various formats to prevent [object Object]
-      let baseErrorMessage = "No pudimos generar tu receta en este momento. Por favor, inténtalo de nuevo.";
+let baseErrorMessage = "No pudimos generar tu receta en este momento. Por favor, inténtalo de nuevo.";
       
-      // Extract meaningful message from error object
+      // Extract meaningful message from error object with comprehensive checks
       let extractedMessage = baseErrorMessage;
-      if (err?.message && typeof err.message === 'string') {
-        extractedMessage = err.message;
-      } else if (typeof err === 'string') {
-        extractedMessage = err;
-      } else if (err?.toString && err.toString() !== '[object Object]') {
-        extractedMessage = err.toString();
+      
+      if (err?.message && typeof err.message === 'string' && err.message.trim()) {
+        extractedMessage = err.message.trim();
+      } else if (err?.response?.data?.message && typeof err.response.data.message === 'string') {
+        extractedMessage = err.response.data.message;
+      } else if (err?.response?.data?.error && typeof err.response.data.error === 'string') {
+        extractedMessage = err.response.data.error;
+      } else if (err?.data?.message && typeof err.data.message === 'string') {
+        extractedMessage = err.data.message;
+      } else if (err?.error && typeof err.error === 'string') {
+        extractedMessage = err.error;
+      } else if (typeof err === 'string' && err.trim()) {
+        extractedMessage = err.trim();
+      } else if (err?.toString && typeof err.toString === 'function') {
+        const stringified = err.toString();
+        if (stringified && stringified !== '[object Object]' && stringified !== 'Error') {
+          extractedMessage = stringified;
+        }
       }
+      
+      // Clean up the message
+      extractedMessage = extractedMessage.replace(/^Error:\s*/i, '').trim();
       
       // Provide specific error messages based on error type
       let errorMessage = baseErrorMessage;

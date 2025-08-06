@@ -1,6 +1,5 @@
 const generateRecipe = async (formData) => {
   await new Promise(resolve => setTimeout(resolve, 1500));
-
   try {
     const prompt = createPrompt(formData);
     console.log("🔍 Prompt generado:", prompt);
@@ -21,25 +20,51 @@ const generateRecipe = async (formData) => {
     };
 } catch (error) {
     // Proper error logging with serialized object
-// Extract meaningful error message for logging and user display
-    const errorMessage = (() => {
-      if (typeof error === 'string') return error;
-      if (error?.message && typeof error.message === 'string') return error.message;
-      if (error?.toString && typeof error.toString === 'function') {
-        const stringified = error.toString();
-        return stringified !== '[object Object]' ? stringified : 'Error desconocido al generar receta';
-      }
-      return 'Error desconocido al generar receta';
-    })();
-
     console.error("💥 Error completo al generar receta:", {
-      message: errorMessage,
-      originalError: error,
-      stack: error?.stack,
-      type: error?.constructor?.name,
-      formData: formData
+      message: error?.message || 'Error desconocido',
+      status: error?.status || error?.code,
+      response: error?.response?.data || error?.data,
+      stack: error?.stack?.split('\n').slice(0, 3) || [],
+      timestamp: new Date().toISOString()
     });
-// Throw a meaningful error message instead of the raw error object
+
+    // Extract meaningful error message for logging and user display
+    let errorMessage = "No pudimos generar tu receta en este momento. Por favor, inténtalo de nuevo.";
+    
+    // Try to extract a meaningful message from various error object structures
+    if (error?.message && typeof error.message === 'string') {
+      errorMessage = error.message;
+    } else if (error?.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error?.response?.data?.error) {
+      errorMessage = error.response.data.error;
+    } else if (error?.data?.message) {
+      errorMessage = error.data.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error?.toString && typeof error.toString === 'function') {
+      const stringified = error.toString();
+      if (stringified && stringified !== '[object Object]') {
+        errorMessage = stringified;
+      }
+    }
+
+    // Generate fallback recipe if possible
+    if (formData && typeof formData === 'object') {
+      console.log("🔄 Generando receta de respaldo...");
+      const fallbackRecipe = generateFallbackRecipe(formData);
+      
+      return {
+        success: false,
+        title: "⚠️ Receta de Respaldo",
+        description: "Generamos una receta básica para ti. Inténtalo de nuevo más tarde para opciones personalizadas.",
+        data: fallbackRecipe,
+        error: errorMessage,
+        isFallback: true
+      };
+    }
+
+// If no fallback possible, throw with cleaned error message
     throw new Error(errorMessage);
   }
 };
@@ -246,17 +271,17 @@ const generateFallbackRecipe = (formData) => {
       timestamp: new Date().toISOString()
     };
   } else {
-    return {
-      id: Date.now().toString(),
-title: `Batido Energético ${formData.flavor ? formData.flavor.charAt(0).toUpperCase() + formData.flavor.slice(1) : "Especial"} con Herbalife`,
+id: Date.now().toString(),
+      title: `Batido Energético ${formData.flavor ? formData.flavor.charAt(0).toUpperCase() + formData.flavor.slice(1) : "Especial"} con Herbalife`,
       ingredients: [
         `2 scoops de ${formData.herbalifeProduct || "Fórmula 1"} Herbalife`,
         "1 taza de agua o leche vegetal",
+        "1 taza de agua o leche vegetal",
         "1/2 taza de fruta fresca de temporada",
         "1 cucharadita de miel natural (opcional)",
-        "Hielo al gusto"
+"Hielo al gusto"
       ],
-instructions: [
+      instructions: [
         "Agrega el agua o leche vegetal en la licuadora",
         `Incorpora los scoops de ${formData.herbalifeProduct || "producto Herbalife"}`,
         "Añade la fruta fresca y la miel si deseas mayor dulzura",

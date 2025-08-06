@@ -65,13 +65,44 @@ const AppContent = () => {
 
 if (error) {
       // Extract meaningful error message before passing to Error component
-      const errorMessage = (() => {
-        if (typeof error === 'string' && error.trim()) return error.trim();
-        if (error?.message && typeof error.message === 'string') return error.message.trim();
+const errorMessage = (() => {
+        // Handle string errors
+        if (typeof error === 'string' && error.trim()) {
+          return error.trim();
+        }
+        
+        // Handle error objects with message property
+        if (error?.message && typeof error.message === 'string' && error.message.trim()) {
+          return error.message.trim();
+        }
+        
+        // Handle API response errors
+        if (error?.response?.data?.message && typeof error.response.data.message === 'string') {
+          return error.response.data.message.trim();
+        }
+        
+        if (error?.response?.data?.error && typeof error.response.data.error === 'string') {
+          return error.response.data.error.trim();
+        }
+        
+        // Handle data property errors
+        if (error?.data?.message && typeof error.data.message === 'string') {
+          return error.data.message.trim();
+        }
+        
+        // Handle error property
+        if (error?.error && typeof error.error === 'string') {
+          return error.error.trim();
+        }
+        
+        // Try toString as last resort
         if (error?.toString && typeof error.toString === 'function') {
           const stringified = error.toString();
-          return stringified !== '[object Object]' ? stringified : 'Error al generar receta';
+          if (stringified && stringified !== '[object Object]' && stringified !== 'Error') {
+            return stringified.replace(/^Error:\s*/i, '').trim();
+          }
         }
+        
         return 'Error al generar receta';
       })();
 
