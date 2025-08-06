@@ -34,14 +34,21 @@ const HealthyFoodForm = ({ onSubmit, onBack }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit({
-        ...formData,
-        type: "healthy-food"
-      });
+      try {
+        onSubmit({
+          ...formData,
+          type: "healthy-food"
+        });
+      } catch (error) {
+        // Handle any submission errors gracefully
+        const errorMessage = error?.message || String(error) || "Error al enviar el formulario";
+        toast.error(errorMessage);
+        console.error('Form submission error:', error);
+      }
     } else {
       toast.error("Por favor completa todos los campos requeridos");
     }

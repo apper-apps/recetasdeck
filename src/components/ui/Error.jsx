@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import React from "react";
 import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 
@@ -7,6 +8,19 @@ const Error = ({
   onRetry,
   title = "¡Ups! Tenemos un pequeño problema"
 }) => {
+  // Ensure message is always a string to prevent [object Object] display
+  const displayMessage = React.useMemo(() => {
+    if (typeof message === 'string') {
+      return message;
+    }
+    if (message?.message && typeof message.message === 'string') {
+      return message.message;
+    }
+    if (message?.toString && message.toString() !== '[object Object]') {
+      return message.toString();
+    }
+    return "Algo salió mal al generar tu receta";
+  }, [message]);
   return (
     <motion.div
       className="flex flex-col items-center justify-center min-h-[400px] p-8 text-center"
@@ -34,8 +48,8 @@ const Error = ({
           {title}
         </h3>
         
-        <p className="text-gray-600 font-body text-lg mb-6 leading-relaxed">
-          {message}
+<p className="text-gray-600 font-body text-lg mb-6 leading-relaxed">
+          {displayMessage}
         </p>
 
         <div className="bg-gradient-to-r from-accent-50 to-orange-50 border border-accent-200 rounded-xl p-4 mb-6">

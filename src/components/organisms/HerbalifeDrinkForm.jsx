@@ -43,10 +43,17 @@ const handleSubmit = (e) => {
     e.preventDefault();
     
     if (validateForm()) {
-      onSubmit({
-        ...formData,
-        type: "herbalife-drink"
-      });
+      try {
+        onSubmit({
+          ...formData,
+          type: "herbalife-drink"
+        });
+      } catch (error) {
+        // Handle any submission errors gracefully
+        const errorMessage = error?.message || String(error) || "Error al enviar el formulario";
+        toast.error(errorMessage);
+        console.error('Form submission error:', error);
+      }
     } else {
       toast.error("Por favor completa todos los campos requeridos");
     }
@@ -218,13 +225,13 @@ const handleObjetivoChange = (objetivo) => {
               <option value="leche de soya">🌱 Leche de soya</option>
             </Select>
 
-            {/* Extras */}
+{/* Extras */}
             <div className="space-y-3">
               <label className="block text-sm font-semibold text-gray-700">
                 Extras opcionales (puedes seleccionar varios)
               </label>
               <div className="grid grid-cols-2 gap-3">
-                {["Fibra", "Vitaminas", "Omega 3", "Antioxidantes", "Probióticos", "Minerales"].map((extra) => (
+                {["Colágeno", "Aloe", "Fibra", "Proteína extra", "Omega 3", "Vitaminas", "Antioxidantes", "Probióticos", "Minerales"].map((extra) => (
                   <label key={extra} className="flex items-center space-x-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -236,27 +243,7 @@ const handleObjetivoChange = (objetivo) => {
                   </label>
                 ))}
               </div>
-            </div>
-
-            {/* Extras */}
-            <div className="space-y-3">
-              <label className="block text-sm font-semibold text-gray-700">
-                Extras opcionales (puedes seleccionar varios)
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                {["colágeno", "aloe", "fibra", "proteína extra", "omega 3", "vitaminas"].map((extra) => (
-                  <label key={extra} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.extras.includes(extra)}
-                      onChange={() => handleExtraChange(extra)}
-                      className="w-4 h-4 text-accent-600 border-gray-300 rounded focus:ring-accent-500"
-                    />
-                    <span className="text-sm text-gray-700 capitalize">{extra}</span>
-                  </label>
-                ))}
-              </div>
-<div className="flex justify-end">
+              <div className="flex justify-end">
                 <Button
                   type="button"
                   variant="ghost"

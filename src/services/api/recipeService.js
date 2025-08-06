@@ -19,19 +19,33 @@ const generateRecipe = async (formData) => {
       prompt: prompt, // Para debug
       webhookResponse: diaflowResponse // Para debug adicional
     };
-  } catch (error) {
+} catch (error) {
+    // Proper error logging with serialized object
     console.error("💥 Error completo al generar receta:", {
-      message: error.message,
-      stack: error.stack,
+      message: error?.message || String(error),
+      stack: error?.stack,
+      type: error?.constructor?.name,
       formData: formData
     });
     
-    // Si el error es del webhook, proporcionamos más información
-    if (error.message.includes('Diaflow Webhook Error')) {
-      throw new Error(`Error de conexión con el servicio de recetas: ${error.message}\n\nPor favor, verifica tu conexión a internet e intenta nuevamente.`);
+    // Extract meaningful error message from various error formats
+    let errorMessage = "No pudimos procesar tu solicitud. Intenta nuevamente.";
+    
+    if (error?.message) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error?.toString && error.toString() !== '[object Object]') {
+      errorMessage = error.toString();
     }
     
-    throw new Error("No pudimos procesar tu solicitud. Intenta nuevamente.");
+    // Si el error es del webhook, proporcionamos más información
+    if (errorMessage.includes('Diaflow Webhook Error')) {
+      throw new Error(`Error de conexión con el servicio de recetas: ${errorMessage}\n\nPor favor, verifica tu conexión a internet e intenta nuevamente.`);
+    }
+    
+    // Ensure we always throw a proper Error with string message
+    throw new Error(errorMessage);
   }
 };
 
