@@ -269,17 +269,17 @@ const generateFallbackRecipe = (formData) => {
       nutritionalTip: "Esta receta combina proteínas de alta calidad con vegetales ricos en vitaminas y minerales, proporcionando una comida balanceada que nutre tu cuerpo y te da energía sostenida.",
       motivationalQuote: "Cada comida saludable es una inversión en tu futuro más brillante",
       timestamp: new Date().toISOString()
-    };
+};
   } else {
-id: Date.now().toString(),
+    return {
+      id: Date.now().toString(),
       title: `Batido Energético ${formData.flavor ? formData.flavor.charAt(0).toUpperCase() + formData.flavor.slice(1) : "Especial"} con Herbalife`,
       ingredients: [
         `2 scoops de ${formData.herbalifeProduct || "Fórmula 1"} Herbalife`,
         "1 taza de agua o leche vegetal",
-        "1 taza de agua o leche vegetal",
         "1/2 taza de fruta fresca de temporada",
         "1 cucharadita de miel natural (opcional)",
-"Hielo al gusto"
+        "Hielo al gusto"
       ],
       instructions: [
         "Agrega el agua o leche vegetal en la licuadora",
